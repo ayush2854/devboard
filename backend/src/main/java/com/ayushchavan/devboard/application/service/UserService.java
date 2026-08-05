@@ -1,8 +1,10 @@
 package com.ayushchavan.devboard.application.service;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ayushchavan.devboard.domain.entity.User;
@@ -12,9 +14,14 @@ import com.ayushchavan.devboard.domain.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Optional<User> findById(UUID id) {
@@ -27,5 +34,28 @@ public class UserService {
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public User createUser(
+            String name,
+            String email,
+            String password
+    ) {
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email is already registered");
+        }
+
+        Instant now = Instant.now();
+
+        User user = new User(
+                UUID.randomUUID(),
+                name,
+                email,
+                passwordEncoder.encode(password),
+                now,
+                now
+        );
+
+        return userRepository.save(user);
     }
 }
