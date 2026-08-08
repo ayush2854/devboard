@@ -166,4 +166,127 @@ void createUser_shouldRejectDuplicateEmail() {
     verify(passwordEncoder, never()).encode(anyString());
     verify(userRepository, never()).save(any(User.class));
 }
+
+@Test
+void changePassword_shouldChangePasswordWhenCurrentPasswordIsCorrect() {
+    UUID userId = UUID.randomUUID();
+
+    User user = new User(
+            userId,
+            "Ayush Chavan",
+            "ayush.updated@example.com",
+            "old-hashed-password",
+            Instant.now(),
+            Instant.now()
+    );
+
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
+
+    when(passwordEncoder.matches(
+            "Password123",
+            "old-hashed-password"
+    )).thenReturn(true);
+
+    when(passwordEncoder.encode("NewPassword456"))
+            .thenReturn("new-hashed-password");
+
+    when(userRepository.save(any(User.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+    userService.changePassword(
+            userId,
+            "Password123",
+            "NewPassword456"
+    );
+
+    assertEquals(
+            "new-hashed-password",
+            user.getPasswordHash()
+    );
+
+    verify(userRepository).findById(userId);
+    verify(passwordEncoder).matches(
+            "Password123",
+            "old-hashed-password"
+    );
+    verify(passwordEncoder).encode("NewPassword456");
+    verify(userRepository).save(user);
+}
+
+@Test
+void changePassword_shouldRejectWhenCurrentPasswordIsIncorrect() {
+    UUID userId = UUID.randomUUID();
+
+    User user = new User(
+            userId,
+            "Ayush Chavan",
+            "ayush.updated@example.com",
+            "old-hashed-password",
+            Instant.now(),
+            Instant.now()
+    );
+
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
+
+    when(passwordEncoder.matches(
+            "WrongPassword",
+            "old-hashed-password"
+    )).thenReturn(false);
+
+    IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.changePassword(
+                    userId,
+                    "WrongPassword",
+                    "NewPassword456"
+            )
+    );
+
+    assertEquals(
+            "Current password is incorrect",
+            exception.getMessage()
+    );
+
+    verify(userRepository).findById(userId);
+    verify(passwordEncoder).matches(
+            "WrongPassword",
+            "old-hashed-password"
+    );
+    verify(passwordEncoder, never())
+            .encode(anyString());
+    verify(userRepository, never())
+            .save(any(User.class));
+}
+
+@Test
+void changePassword_shouldRejectWhenUserDoesNotExist() {
+    UUID userId = UUID.randomUUID();
+
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.empty());
+
+    IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.changePassword(
+                    userId,
+                    "Password123",
+                    "NewPassword456"
+            )
+    );
+
+    assertEquals(
+            "User not found",
+            exception.getMessage()
+    );
+
+    verify(userRepository).findById(userId);
+    verify(passwordEncoder, never())
+            .matches(anyString(), anyString());
+    verify(passwordEncoder, never())
+            .encode(anyString());
+    verify(userRepository, never())
+            .save(any(User.class));
+}
 }

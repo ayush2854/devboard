@@ -36,6 +36,10 @@ public class SecurityConfig {
                                 "/api/users",
                                 "/api/auth/login"
                         ).permitAll()
+                        .requestMatchers(
+                        "/api/users/me",
+                        "/api/users/me/password"
+                        ).authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
