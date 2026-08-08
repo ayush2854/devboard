@@ -1,7 +1,11 @@
 package com.ayushchavan.devboard.presentation.controller;
 
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,5 +39,19 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(UserResponse.from(user));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(
+            Authentication authentication
+    ) {
+        UUID userId = (UUID) authentication.getPrincipal();
+
+        User user = userService.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User not found")
+                );
+
+        return ResponseEntity.ok(UserResponse.from(user));
     }
 }
