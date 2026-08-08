@@ -85,6 +85,15 @@ public class UserService {
     userRepository.save(user);
     }
 
+    public void deleteUser(UUID userId) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() ->
+                    new IllegalArgumentException("User not found")
+            );
+
+    userRepository.delete(user);
+    }
+
     public User createUser(
             String name,
             String email,

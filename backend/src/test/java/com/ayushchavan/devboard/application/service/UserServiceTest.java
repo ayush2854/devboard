@@ -289,4 +289,69 @@ void changePassword_shouldRejectWhenUserDoesNotExist() {
     verify(userRepository, never())
             .save(any(User.class));
 }
+
+@Test
+void deleteUser_shouldDeleteUserWhenUserExists() {
+    UUID userId = UUID.randomUUID();
+
+    User user = new User(
+            userId,
+            "Ayush Chavan",
+            "ayush@example.com",
+            "hashed-password",
+            Instant.now(),
+            Instant.now()
+    );
+
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
+
+    userService.deleteUser(userId);
+
+    verify(userRepository).findById(userId);
+    verify(userRepository).delete(user);
+}
+
+@Test
+void deleteUser_shouldRejectWhenUserDoesNotExist() {
+    UUID userId = UUID.randomUUID();
+
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.empty());
+
+    IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.deleteUser(userId)
+    );
+
+    assertEquals(
+            "User not found",
+            exception.getMessage()
+    );
+
+    verify(userRepository).findById(userId);
+    verify(userRepository, never())
+            .delete(any(User.class));
+}
+
+@Test
+void deleteUser_shouldNotDeleteDifferentUser() {
+    UUID userId = UUID.randomUUID();
+
+    User user = new User(
+            userId,
+            "Ayush Chavan",
+            "ayush@example.com",
+            "hashed-password",
+            Instant.now(),
+            Instant.now()
+    );
+
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
+
+    userService.deleteUser(userId);
+
+    verify(userRepository).delete(user);
+}
 }
