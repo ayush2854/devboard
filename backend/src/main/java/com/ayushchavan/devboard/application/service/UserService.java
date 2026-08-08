@@ -36,6 +36,29 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
+
+    public User updateProfile(
+        UUID userId,
+        String name,
+        String email
+    ) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() ->
+                    new IllegalArgumentException("User not found")
+            );
+
+    if (!user.getEmail().equals(email)
+            && userRepository.existsByEmail(email)) {
+        throw new IllegalArgumentException(
+                "Email is already registered"
+        );
+    }
+
+    user.updateProfile(name, email);
+
+    return userRepository.save(user);
+    }
+
     public User createUser(
             String name,
             String email,

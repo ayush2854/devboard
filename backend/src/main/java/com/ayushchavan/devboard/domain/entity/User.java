@@ -34,6 +34,15 @@ public class User {
         // Required by JPA
     }
 
+    public void updateProfile(
+        String name,
+        String email
+    ) {
+    this.name = name;
+    this.email = email;
+    this.updatedAt = Instant.now();
+    }
+
     public User(
             UUID id,
             String name,
