@@ -1,9 +1,11 @@
 package com.ayushchavan.devboard.application.dto.task;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.ayushchavan.devboard.domain.entity.Task;
+import com.ayushchavan.devboard.domain.entity.TaskPriority;
 import com.ayushchavan.devboard.domain.entity.TaskStatus;
 
 public class TaskResponse {
@@ -13,9 +15,13 @@ public class TaskResponse {
     private final String title;
     private final String description;
     private final TaskStatus status;
+    private final TaskPriority priority;
+    private final UUID createdBy;
     private final UUID assigneeId;
+    private final LocalDate dueDate;
     private final Instant createdAt;
     private final Instant updatedAt;
+    private final Instant archivedAt;
 
     private TaskResponse(
             UUID id,
@@ -23,18 +29,26 @@ public class TaskResponse {
             String title,
             String description,
             TaskStatus status,
+            TaskPriority priority,
+            UUID createdBy,
             UUID assigneeId,
+            LocalDate dueDate,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            Instant archivedAt
     ) {
         this.id = id;
         this.projectId = projectId;
         this.title = title;
         this.description = description;
         this.status = status;
+        this.priority = priority;
+        this.createdBy = createdBy;
         this.assigneeId = assigneeId;
+        this.dueDate = dueDate;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.archivedAt = archivedAt;
     }
 
     public static TaskResponse from(Task task) {
@@ -44,9 +58,13 @@ public class TaskResponse {
                 task.getTitle(),
                 task.getDescription(),
                 task.getStatus(),
+                task.getPriority(),
+                task.getCreatedBy(),
                 task.getAssigneeId(),
+                task.getDueDate(),
                 task.getCreatedAt(),
-                task.getUpdatedAt()
+                task.getUpdatedAt(),
+                task.getArchivedAt()
         );
     }
 
@@ -70,8 +88,20 @@ public class TaskResponse {
         return status;
     }
 
+    public TaskPriority getPriority() {
+        return priority;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
+
     public UUID getAssigneeId() {
         return assigneeId;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
     }
 
     public Instant getCreatedAt() {
@@ -80,5 +110,9 @@ public class TaskResponse {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
     }
 }

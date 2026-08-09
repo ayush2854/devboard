@@ -1,6 +1,7 @@
 package com.ayushchavan.devboard.domain.entity;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -30,14 +31,27 @@ public class Task {
     @Column(name = "status", nullable = false)
     private TaskStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false)
+    private TaskPriority priority;
+
+    @Column(name = "created_by", nullable = false)
+    private UUID createdBy;
+
     @Column(name = "assignee_id")
     private UUID assigneeId;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "archived_at")
+    private Instant archivedAt;
 
     protected Task() {
         // Required by JPA
@@ -49,18 +63,26 @@ public class Task {
             String title,
             String description,
             TaskStatus status,
+            TaskPriority priority,
+            UUID createdBy,
             UUID assigneeId,
+            LocalDate dueDate,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            Instant archivedAt
     ) {
         this.id = id;
         this.projectId = projectId;
         this.title = title;
         this.description = description;
         this.status = status;
+        this.priority = priority;
+        this.createdBy = createdBy;
         this.assigneeId = assigneeId;
+        this.dueDate = dueDate;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.archivedAt = archivedAt;
     }
 
     public UUID getId() {
@@ -83,8 +105,20 @@ public class Task {
         return status;
     }
 
+    public TaskPriority getPriority() {
+        return priority;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
+
     public UUID getAssigneeId() {
         return assigneeId;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
     }
 
     public Instant getCreatedAt() {
@@ -93,5 +127,9 @@ public class Task {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
     }
 }

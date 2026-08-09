@@ -1,7 +1,9 @@
 package com.ayushchavan.devboard.application.dto.task;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
+import com.ayushchavan.devboard.domain.entity.TaskPriority;
 import com.ayushchavan.devboard.domain.entity.TaskStatus;
 
 public class UpdateTaskRequest {
@@ -9,7 +11,9 @@ public class UpdateTaskRequest {
     private String title;
     private String description;
     private TaskStatus status;
+    private TaskPriority priority;
     private UUID assigneeId;
+    private LocalDate dueDate;
 
     public UpdateTaskRequest() {
     }
@@ -26,7 +30,15 @@ public class UpdateTaskRequest {
         return status;
     }
 
+    public TaskPriority getPriority() {
+        return priority;
+    }
+
     public UUID getAssigneeId() {
         return assigneeId;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
     }
 }

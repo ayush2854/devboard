@@ -1,12 +1,14 @@
 package com.ayushchavan.devboard.application.service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.ayushchavan.devboard.domain.entity.Task;
+import com.ayushchavan.devboard.domain.entity.TaskPriority;
 import com.ayushchavan.devboard.domain.entity.TaskStatus;
 import com.ayushchavan.devboard.domain.repository.TaskRepository;
 
@@ -44,7 +46,10 @@ public class TaskService {
             UUID projectId,
             String title,
             String description,
-            UUID assigneeId
+            TaskPriority priority,
+            UUID createdBy,
+            UUID assigneeId,
+            LocalDate dueDate
     ) {
         Instant now = Instant.now();
 
@@ -54,9 +59,13 @@ public class TaskService {
                 title,
                 description,
                 TaskStatus.TODO,
+                priority,
+                createdBy,
                 assigneeId,
+                dueDate,
                 now,
-                now
+                now,
+                null
         );
 
         return taskRepository.save(task);
@@ -67,7 +76,9 @@ public class TaskService {
             String title,
             String description,
             TaskStatus status,
-            UUID assigneeId
+            TaskPriority priority,
+            UUID assigneeId,
+            LocalDate dueDate
     ) {
         Task existingTask = findById(taskId);
 
@@ -77,9 +88,13 @@ public class TaskService {
                 title,
                 description,
                 status,
+                priority,
+                existingTask.getCreatedBy(),
                 assigneeId,
+                dueDate,
                 existingTask.getCreatedAt(),
-                Instant.now()
+                Instant.now(),
+                existingTask.getArchivedAt()
         );
 
         return taskRepository.save(updatedTask);

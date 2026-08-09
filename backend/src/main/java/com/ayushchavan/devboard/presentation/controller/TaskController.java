@@ -108,84 +108,89 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(
-            Authentication authentication,
-            @PathVariable UUID workspaceId,
-            @PathVariable UUID projectId,
-            @RequestBody CreateTaskRequest request
+        Authentication authentication,
+        @PathVariable UUID workspaceId,
+        @PathVariable UUID projectId,
+        @RequestBody CreateTaskRequest request
     ) {
-        UUID authenticatedUserId =
-                getAuthenticatedUserId(authentication);
+    UUID authenticatedUserId =
+            getAuthenticatedUserId(authentication);
 
-        WorkspaceRole actorRole =
-                getRequiredWorkspaceRole(
-                        workspaceId,
-                        authenticatedUserId
-                );
+    WorkspaceRole actorRole =
+            getRequiredWorkspaceRole(
+                    workspaceId,
+                    authenticatedUserId
+            );
 
-        requireAdminOrOwner(actorRole);
+    requireAdminOrOwner(actorRole);
 
-        requireProjectBelongsToWorkspace(
-                projectId,
-                workspaceId
-        );
+    requireProjectBelongsToWorkspace(
+            projectId,
+            workspaceId
+    );
 
-        Task task =
-                taskService.createTask(
-                        projectId,
-                        request.getTitle(),
-                        request.getDescription(),
-                        request.getAssigneeId()
-                );
+    Task task =
+            taskService.createTask(
+                    projectId,
+                    request.getTitle(),
+                    request.getDescription(),
+                    request.getPriority(),
+                    authenticatedUserId,
+                    request.getAssigneeId(),
+                    request.getDueDate()
+            );
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(TaskResponse.from(task));
+    return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(TaskResponse.from(task));
     }
 
     @PutMapping("/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(
-            Authentication authentication,
-            @PathVariable UUID workspaceId,
-            @PathVariable UUID projectId,
-            @PathVariable UUID taskId,
-            @RequestBody UpdateTaskRequest request
+        Authentication authentication,
+        @PathVariable UUID workspaceId,
+        @PathVariable UUID projectId,
+        @PathVariable UUID taskId,
+        @RequestBody UpdateTaskRequest request
     ) {
-        UUID authenticatedUserId =
-                getAuthenticatedUserId(authentication);
+    UUID authenticatedUserId =
+            getAuthenticatedUserId(authentication);
 
-        WorkspaceRole actorRole =
-                getRequiredWorkspaceRole(
-                        workspaceId,
-                        authenticatedUserId
-                );
+    WorkspaceRole actorRole =
+            getRequiredWorkspaceRole(
+                    workspaceId,
+                    authenticatedUserId
+            );
 
-        requireAdminOrOwner(actorRole);
+    requireAdminOrOwner(actorRole);
 
-        requireProjectBelongsToWorkspace(
-                projectId,
-                workspaceId
-        );
+    requireProjectBelongsToWorkspace(
+            projectId,
+            workspaceId
+    );
 
-        Task existingTask =
-                taskService.findById(taskId);
+    Task existingTask =
+            taskService.findById(taskId);
 
-        requireTaskBelongsToProject(
-                existingTask,
-                projectId
-        );
+    requireTaskBelongsToProject(
+            existingTask,
+            projectId
+    );
 
-        Task task =
-                taskService.updateTask(
-                        taskId,
-                        request.getTitle(),
-                        request.getDescription(),
-                        request.getStatus(),
-                        request.getAssigneeId()
-                );
+    Task task =
+            taskService.updateTask(
+                    taskId,
+                    request.getTitle(),
+                    request.getDescription(),
+                    request.getStatus(),
+                    request.getPriority(),
+                    request.getAssigneeId(),
+                    request.getDueDate()
+            );
 
-        return ResponseEntity.ok(
-                TaskResponse.from(task)
-        );
+    return ResponseEntity.ok(
+            TaskResponse.from(task)
+    );
     }
 
     @DeleteMapping("/{taskId}")
