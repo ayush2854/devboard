@@ -1,27 +1,39 @@
 package com.ayushchavan.devboard.application.dto.user;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class ChangePasswordRequest {
 
-    private String currentPassword;
-    private String newPassword;
+@NotBlank(message = "Current password is required")
+private String currentPassword;
 
-    public ChangePasswordRequest() {
-        // Required for JSON deserialization
-    }
+@NotBlank(message = "New password is required")
+@Size(
+    min = 8,
+    max = 72,
+    message = "New password must be between 8 and 72 characters"
+)
+private String newPassword;
 
-    public String getCurrentPassword() {
-        return currentPassword;
-    }
+public ChangePasswordRequest() {
+    // Required for JSON deserialization
+}
 
-    public void setCurrentPassword(String currentPassword) {
-        this.currentPassword = currentPassword;
-    }
+public String getCurrentPassword() {
+    return currentPassword;
+}
 
-    public String getNewPassword() {
-        return newPassword;
-    }
+public void setCurrentPassword(String currentPassword) {
+    this.currentPassword = currentPassword;
+}
 
-    public void setNewPassword(String newPassword) {
-        this.newPassword = newPassword;
-    }
+public String getNewPassword() {
+    return newPassword;
+}
+
+public void setNewPassword(String newPassword) {
+    this.newPassword = newPassword;
+}
+
 }

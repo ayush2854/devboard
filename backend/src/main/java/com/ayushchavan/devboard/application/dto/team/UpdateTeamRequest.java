@@ -1,26 +1,34 @@
 package com.ayushchavan.devboard.application.dto.team;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class UpdateTeamRequest {
 
-    private String name;
-    private String description;
+@NotBlank(message = "Team name is required")
+@Size(max = 100, message = "Team name must not exceed 100 characters")
+private String name;
 
-    public UpdateTeamRequest() {
-    }
+@Size(max = 1000, message = "Description must not exceed 1000 characters")
+private String description;
 
-    public String getName() {
-        return name;
-    }
+public UpdateTeamRequest() {
+}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+public String getName() {
+    return name;
+}
 
-    public String getDescription() {
-        return description;
-    }
+public void setName(String name) {
+    this.name = name;
+}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+public String getDescription() {
+    return description;
+}
+
+public void setDescription(String description) {
+    this.description = description;
+}
+
 }

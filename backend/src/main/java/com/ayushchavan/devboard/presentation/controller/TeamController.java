@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ayushchavan.devboard.application.dto.team.CreateTeamRequest;
 import com.ayushchavan.devboard.application.dto.team.TeamResponse;
 import com.ayushchavan.devboard.application.dto.team.UpdateTeamRequest;
+import com.ayushchavan.devboard.application.exception.ForbiddenException;
 import com.ayushchavan.devboard.application.service.TeamService;
 import com.ayushchavan.devboard.application.service.WorkspaceMembershipService;
 import com.ayushchavan.devboard.domain.entity.Team;
@@ -76,7 +77,8 @@ public class TeamController {
                 authenticatedUserId
         );
 
-        Team team = teamService.findById(teamId);
+        Team team =
+                teamService.findById(teamId);
 
         requireTeamBelongsToWorkspace(
                 team,
@@ -105,11 +107,12 @@ public class TeamController {
 
         requireAdminOrOwner(actorRole);
 
-        Team team = teamService.createTeam(
-                workspaceId,
-                request.getName(),
-                request.getDescription()
-        );
+        Team team =
+                teamService.createTeam(
+                        workspaceId,
+                        request.getName(),
+                        request.getDescription()
+                );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -142,11 +145,12 @@ public class TeamController {
                 workspaceId
         );
 
-        Team team = teamService.updateTeam(
-                teamId,
-                request.getName(),
-                request.getDescription()
-        );
+        Team team =
+                teamService.updateTeam(
+                        teamId,
+                        request.getName(),
+                        request.getDescription()
+                );
 
         return ResponseEntity.ok(
                 TeamResponse.from(team)
@@ -186,7 +190,8 @@ public class TeamController {
     private UUID getAuthenticatedUserId(
             Authentication authentication
     ) {
-        Object principal = authentication.getPrincipal();
+        Object principal =
+                authentication.getPrincipal();
 
         if (principal instanceof UUID userId) {
             return userId;
@@ -214,7 +219,7 @@ public class TeamController {
                 )
                 .map(WorkspaceMembership::getRole)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ForbiddenException(
                                 "User is not a member of this workspace"
                         )
                 );
@@ -236,7 +241,7 @@ public class TeamController {
         if (role != WorkspaceRole.OWNER
                 && role != WorkspaceRole.ADMIN) {
 
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Insufficient workspace permissions"
             );
         }
@@ -247,7 +252,7 @@ public class TeamController {
             UUID workspaceId
     ) {
         if (!team.getWorkspaceId().equals(workspaceId)) {
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Team does not belong to this workspace"
             );
         }

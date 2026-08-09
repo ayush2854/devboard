@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.WorkspaceMembership;
 import com.ayushchavan.devboard.domain.entity.WorkspaceRole;
 import com.ayushchavan.devboard.domain.repository.WorkspaceMembershipRepository;
@@ -50,7 +52,7 @@ public class WorkspaceMembershipService {
                 workspaceId,
                 userId
         )) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "User is already a member of this workspace"
             );
         }
@@ -61,13 +63,14 @@ public class WorkspaceMembershipService {
             );
         }
 
-        WorkspaceMembership membership = new WorkspaceMembership(
-                UUID.randomUUID(),
-                workspaceId,
-                userId,
-                role,
-                Instant.now()
-        );
+        WorkspaceMembership membership =
+                new WorkspaceMembership(
+                        UUID.randomUUID(),
+                        workspaceId,
+                        userId,
+                        role,
+                        Instant.now()
+                );
 
         return membershipRepository.save(membership);
     }
@@ -83,7 +86,7 @@ public class WorkspaceMembershipService {
                                 userId
                         )
                         .orElseThrow(() ->
-                                new IllegalArgumentException(
+                                new ResourceNotFoundException(
                                         "Workspace membership not found"
                                 )
                         );

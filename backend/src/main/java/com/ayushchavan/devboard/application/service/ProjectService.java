@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.Project;
 import com.ayushchavan.devboard.domain.entity.ProjectStatus;
 import com.ayushchavan.devboard.domain.repository.ProjectRepository;
@@ -34,7 +36,7 @@ public class ProjectService {
     public Project findById(UUID projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ResourceNotFoundException(
                                 "Project not found"
                         )
                 );
@@ -83,7 +85,7 @@ public class ProjectService {
                         name
                 )) {
 
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "Project name already exists in this workspace"
             );
         }
@@ -115,7 +117,7 @@ public class ProjectService {
 
     private void requireWorkspaceExists(UUID workspaceId) {
         if (!workspaceRepository.existsById(workspaceId)) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                     "Workspace not found"
             );
         }
@@ -129,7 +131,7 @@ public class ProjectService {
                 workspaceId,
                 name
         )) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "Project name already exists in this workspace"
             );
         }

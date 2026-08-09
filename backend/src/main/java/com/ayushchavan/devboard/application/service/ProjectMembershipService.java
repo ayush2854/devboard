@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.ProjectMembership;
 import com.ayushchavan.devboard.domain.repository.ProjectMembershipRepository;
 
@@ -37,7 +39,7 @@ public class ProjectMembershipService {
                         userId
                 )
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ResourceNotFoundException(
                                 "Project membership not found"
                         )
                 );
@@ -90,7 +92,7 @@ public class ProjectMembershipService {
                         userId
                 )) {
 
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "User is already a member of this project"
             );
         }

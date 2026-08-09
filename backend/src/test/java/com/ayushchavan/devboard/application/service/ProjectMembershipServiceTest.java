@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.ProjectMembership;
 import com.ayushchavan.devboard.domain.repository.ProjectMembershipRepository;
 
@@ -122,9 +124,9 @@ class ProjectMembershipServiceTest {
                 ))
                 .thenReturn(Optional.empty());
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> projectMembershipService
                                 .findByProjectAndUser(
                                         projectId,
@@ -211,10 +213,12 @@ class ProjectMembershipServiceTest {
 
         assertEquals(projectId, result.getProjectId());
         assertEquals(userId, result.getUserId());
+
         assertEquals(
                 projectId != null,
                 result.getProjectId() != null
         );
+
         assertEquals(
                 userId != null,
                 result.getUserId() != null
@@ -231,9 +235,9 @@ class ProjectMembershipServiceTest {
                 ))
                 .thenReturn(true);
 
-        IllegalArgumentException exception =
+        ConflictException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ConflictException.class,
                         () -> projectMembershipService.addMember(
                                 projectId,
                                 userId
@@ -295,9 +299,9 @@ class ProjectMembershipServiceTest {
                 ))
                 .thenReturn(Optional.empty());
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> projectMembershipService.removeMember(
                                 projectId,
                                 userId

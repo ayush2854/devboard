@@ -2,18 +2,22 @@ package com.ayushchavan.devboard.application.dto.project;
 
 import java.util.UUID;
 
+import jakarta.validation.constraints.NotNull;
+
 public class AddProjectMemberRequest {
 
-    private UUID userId;
+@NotNull(message = "User ID is required")
+private UUID userId;
 
-    public AddProjectMemberRequest() {
-    }
+public AddProjectMemberRequest() {
+}
 
-    public UUID getUserId() {
-        return userId;
-    }
+public UUID getUserId() {
+    return userId;
+}
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
+public void setUserId(UUID userId) {
+    this.userId = userId;
+}
+
 }

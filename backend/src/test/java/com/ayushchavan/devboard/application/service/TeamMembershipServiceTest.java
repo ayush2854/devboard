@@ -19,6 +19,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.TeamMembership;
 import com.ayushchavan.devboard.domain.repository.TeamMembershipRepository;
 import com.ayushchavan.devboard.domain.repository.TeamRepository;
@@ -83,9 +85,9 @@ class TeamMembershipServiceTest {
         when(teamRepository.existsById(teamId))
                 .thenReturn(false);
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService
                                 .findAllByTeamId(teamId)
                 );
@@ -126,9 +128,9 @@ class TeamMembershipServiceTest {
         when(membershipRepository.findById(membershipId))
                 .thenReturn(Optional.empty());
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService
                                 .findById(membershipId)
                 );
@@ -179,9 +181,9 @@ class TeamMembershipServiceTest {
                         )
         ).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService
                                 .findByTeamAndUser(
                                         teamId,
@@ -244,9 +246,9 @@ class TeamMembershipServiceTest {
         when(teamRepository.existsById(teamId))
                 .thenReturn(false);
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService
                                 .addMember(
                                         teamId,
@@ -274,9 +276,9 @@ class TeamMembershipServiceTest {
         when(userRepository.existsById(userId))
                 .thenReturn(false);
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService
                                 .addMember(
                                         teamId,
@@ -309,9 +311,9 @@ class TeamMembershipServiceTest {
                         )
         ).thenReturn(true);
 
-        IllegalArgumentException exception =
+        ConflictException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ConflictException.class,
                         () -> membershipService
                                 .addMember(
                                         teamId,
@@ -364,9 +366,9 @@ class TeamMembershipServiceTest {
                         )
         ).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService
                                 .removeMember(
                                         teamId,

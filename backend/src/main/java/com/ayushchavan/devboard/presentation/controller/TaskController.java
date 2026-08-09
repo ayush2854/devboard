@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ayushchavan.devboard.application.dto.task.CreateTaskRequest;
 import com.ayushchavan.devboard.application.dto.task.TaskResponse;
 import com.ayushchavan.devboard.application.dto.task.UpdateTaskRequest;
+import com.ayushchavan.devboard.application.exception.ForbiddenException;
 import com.ayushchavan.devboard.application.service.ProjectService;
 import com.ayushchavan.devboard.application.service.TaskService;
 import com.ayushchavan.devboard.application.service.WorkspaceMembershipService;
@@ -108,89 +109,89 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(
-        Authentication authentication,
-        @PathVariable UUID workspaceId,
-        @PathVariable UUID projectId,
-        @RequestBody CreateTaskRequest request
+            Authentication authentication,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID projectId,
+            @RequestBody CreateTaskRequest request
     ) {
-    UUID authenticatedUserId =
-            getAuthenticatedUserId(authentication);
+        UUID authenticatedUserId =
+                getAuthenticatedUserId(authentication);
 
-    WorkspaceRole actorRole =
-            getRequiredWorkspaceRole(
-                    workspaceId,
-                    authenticatedUserId
-            );
+        WorkspaceRole actorRole =
+                getRequiredWorkspaceRole(
+                        workspaceId,
+                        authenticatedUserId
+                );
 
-    requireAdminOrOwner(actorRole);
+        requireAdminOrOwner(actorRole);
 
-    requireProjectBelongsToWorkspace(
-            projectId,
-            workspaceId
-    );
+        requireProjectBelongsToWorkspace(
+                projectId,
+                workspaceId
+        );
 
-    Task task =
-            taskService.createTask(
-                    projectId,
-                    request.getTitle(),
-                    request.getDescription(),
-                    request.getPriority(),
-                    authenticatedUserId,
-                    request.getAssigneeId(),
-                    request.getDueDate()
-            );
+        Task task =
+                taskService.createTask(
+                        projectId,
+                        request.getTitle(),
+                        request.getDescription(),
+                        request.getPriority(),
+                        authenticatedUserId,
+                        request.getAssigneeId(),
+                        request.getDueDate()
+                );
 
-    return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(TaskResponse.from(task));
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(TaskResponse.from(task));
     }
 
     @PutMapping("/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(
-        Authentication authentication,
-        @PathVariable UUID workspaceId,
-        @PathVariable UUID projectId,
-        @PathVariable UUID taskId,
-        @RequestBody UpdateTaskRequest request
+            Authentication authentication,
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID projectId,
+            @PathVariable UUID taskId,
+            @RequestBody UpdateTaskRequest request
     ) {
-    UUID authenticatedUserId =
-            getAuthenticatedUserId(authentication);
+        UUID authenticatedUserId =
+                getAuthenticatedUserId(authentication);
 
-    WorkspaceRole actorRole =
-            getRequiredWorkspaceRole(
-                    workspaceId,
-                    authenticatedUserId
-            );
+        WorkspaceRole actorRole =
+                getRequiredWorkspaceRole(
+                        workspaceId,
+                        authenticatedUserId
+                );
 
-    requireAdminOrOwner(actorRole);
+        requireAdminOrOwner(actorRole);
 
-    requireProjectBelongsToWorkspace(
-            projectId,
-            workspaceId
-    );
+        requireProjectBelongsToWorkspace(
+                projectId,
+                workspaceId
+        );
 
-    Task existingTask =
-            taskService.findById(taskId);
+        Task existingTask =
+                taskService.findById(taskId);
 
-    requireTaskBelongsToProject(
-            existingTask,
-            projectId
-    );
+        requireTaskBelongsToProject(
+                existingTask,
+                projectId
+        );
 
-    Task task =
-            taskService.updateTask(
-                    taskId,
-                    request.getTitle(),
-                    request.getDescription(),
-                    request.getStatus(),
-                    request.getPriority(),
-                    request.getAssigneeId(),
-                    request.getDueDate()
-            );
+        Task task =
+                taskService.updateTask(
+                        taskId,
+                        request.getTitle(),
+                        request.getDescription(),
+                        request.getStatus(),
+                        request.getPriority(),
+                        request.getAssigneeId(),
+                        request.getDueDate()
+                );
 
-    return ResponseEntity.ok(
-            TaskResponse.from(task)
-    );
+        return ResponseEntity.ok(
+                TaskResponse.from(task)
+        );
     }
 
     @DeleteMapping("/{taskId}")
@@ -261,7 +262,7 @@ public class TaskController {
                 )
                 .map(WorkspaceMembership::getRole)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ForbiddenException(
                                 "User is not a member of this workspace"
                         )
                 );
@@ -283,7 +284,7 @@ public class TaskController {
         if (role != WorkspaceRole.OWNER
                 && role != WorkspaceRole.ADMIN) {
 
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Insufficient workspace permissions"
             );
         }
@@ -299,7 +300,7 @@ public class TaskController {
         if (!project.getWorkspaceId()
                 .equals(workspaceId)) {
 
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Project does not belong to this workspace"
             );
         }
@@ -314,7 +315,7 @@ public class TaskController {
         if (!task.getProjectId()
                 .equals(projectId)) {
 
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Task does not belong to this project"
             );
         }

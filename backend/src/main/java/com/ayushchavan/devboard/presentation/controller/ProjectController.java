@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ayushchavan.devboard.application.dto.project.CreateProjectRequest;
 import com.ayushchavan.devboard.application.dto.project.ProjectResponse;
 import com.ayushchavan.devboard.application.dto.project.UpdateProjectRequest;
+import com.ayushchavan.devboard.application.exception.ForbiddenException;
 import com.ayushchavan.devboard.application.service.ProjectService;
 import com.ayushchavan.devboard.application.service.WorkspaceMembershipService;
 import com.ayushchavan.devboard.domain.entity.Project;
@@ -222,7 +223,8 @@ public class ProjectController {
     private UUID getAuthenticatedUserId(
             Authentication authentication
     ) {
-        Object principal = authentication.getPrincipal();
+        Object principal =
+                authentication.getPrincipal();
 
         if (principal instanceof UUID userId) {
             return userId;
@@ -250,7 +252,7 @@ public class ProjectController {
                 )
                 .map(WorkspaceMembership::getRole)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ForbiddenException(
                                 "User is not a member of this workspace"
                         )
                 );
@@ -272,7 +274,7 @@ public class ProjectController {
         if (role != WorkspaceRole.OWNER
                 && role != WorkspaceRole.ADMIN) {
 
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Insufficient workspace permissions"
             );
         }
@@ -283,7 +285,7 @@ public class ProjectController {
             UUID workspaceId
     ) {
         if (!project.getWorkspaceId().equals(workspaceId)) {
-            throw new IllegalArgumentException(
+            throw new ForbiddenException(
                     "Project does not belong to this workspace"
             );
         }

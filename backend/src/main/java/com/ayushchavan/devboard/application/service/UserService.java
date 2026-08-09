@@ -7,6 +7,9 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ayushchavan.devboard.application.exception.AuthenticationException;
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.User;
 import com.ayushchavan.devboard.domain.repository.UserRepository;
 
@@ -36,62 +39,68 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-
     public User updateProfile(
-        UUID userId,
-        String name,
-        String email
+            UUID userId,
+            String name,
+            String email
     ) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() ->
-                    new IllegalArgumentException("User not found")
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
+
+        if (!user.getEmail().equals(email)
+                && userRepository.existsByEmail(email)) {
+
+            throw new ConflictException(
+                    "Email is already registered"
             );
+        }
 
-    if (!user.getEmail().equals(email)
-            && userRepository.existsByEmail(email)) {
-        throw new IllegalArgumentException(
-                "Email is already registered"
-        );
-    }
+        user.updateProfile(name, email);
 
-    user.updateProfile(name, email);
-
-    return userRepository.save(user);
+        return userRepository.save(user);
     }
 
     public void changePassword(
-        UUID userId,
-        String currentPassword,
-        String newPassword
+            UUID userId,
+            String currentPassword,
+            String newPassword
     ) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() ->
-                    new IllegalArgumentException("User not found")
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
+
+        if (!passwordEncoder.matches(
+                currentPassword,
+                user.getPasswordHash()
+        )) {
+            throw new AuthenticationException(
+                    "Current password is incorrect"
             );
+        }
 
-    if (!passwordEncoder.matches(
-            currentPassword,
-            user.getPasswordHash()
-    )) {
-        throw new IllegalArgumentException(
-                "Current password is incorrect"
+        user.changePassword(
+                passwordEncoder.encode(newPassword)
         );
-    }
 
-    user.changePassword(
-            passwordEncoder.encode(newPassword)
-    );
-
-    userRepository.save(user);
+        userRepository.save(user);
     }
 
     public void deleteUser(UUID userId) {
-    User user = userRepository.findById(userId)
-            .orElseThrow(() ->
-                    new IllegalArgumentException("User not found")
-            );
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
 
-    userRepository.delete(user);
+        userRepository.delete(user);
     }
 
     public User createUser(
@@ -100,7 +109,9 @@ public class UserService {
             String password
     ) {
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email is already registered");
+            throw new ConflictException(
+                    "Email is already registered"
+            );
         }
 
         Instant now = Instant.now();

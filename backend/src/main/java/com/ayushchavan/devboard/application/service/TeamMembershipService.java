@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.TeamMembership;
 import com.ayushchavan.devboard.domain.repository.TeamMembershipRepository;
 import com.ayushchavan.devboard.domain.repository.TeamRepository;
@@ -37,7 +39,7 @@ public class TeamMembershipService {
     public TeamMembership findById(UUID membershipId) {
         return membershipRepository.findById(membershipId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ResourceNotFoundException(
                                 "Team membership not found"
                         )
                 );
@@ -50,7 +52,7 @@ public class TeamMembershipService {
         return membershipRepository
                 .findByTeamIdAndUserId(teamId, userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new ResourceNotFoundException(
                                 "Team membership not found"
                         )
                 );
@@ -86,7 +88,7 @@ public class TeamMembershipService {
 
     private void requireTeamExists(UUID teamId) {
         if (!teamRepository.existsById(teamId)) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                     "Team not found"
             );
         }
@@ -94,7 +96,7 @@ public class TeamMembershipService {
 
     private void requireUserExists(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                     "User not found"
             );
         }
@@ -108,7 +110,7 @@ public class TeamMembershipService {
                 teamId,
                 userId
         )) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "User is already a member of this team"
             );
         }

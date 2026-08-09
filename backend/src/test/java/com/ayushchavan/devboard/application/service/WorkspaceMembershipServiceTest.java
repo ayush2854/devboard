@@ -18,6 +18,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ayushchavan.devboard.application.exception.ConflictException;
+import com.ayushchavan.devboard.application.exception.ResourceNotFoundException;
 import com.ayushchavan.devboard.domain.entity.WorkspaceMembership;
 import com.ayushchavan.devboard.domain.entity.WorkspaceRole;
 import com.ayushchavan.devboard.domain.repository.WorkspaceMembershipRepository;
@@ -57,9 +59,18 @@ class WorkspaceMembershipServiceTest {
                 );
 
         assertTrue(result.isPresent());
-        assertEquals(workspaceId, result.get().getWorkspaceId());
-        assertEquals(userId, result.get().getUserId());
-        assertEquals(WorkspaceRole.MEMBER, result.get().getRole());
+        assertEquals(
+                workspaceId,
+                result.get().getWorkspaceId()
+        );
+        assertEquals(
+                userId,
+                result.get().getUserId()
+        );
+        assertEquals(
+                WorkspaceRole.MEMBER,
+                result.get().getRole()
+        );
 
         verify(membershipRepository)
                 .findByWorkspaceIdAndUserId(
@@ -102,8 +113,11 @@ class WorkspaceMembershipServiceTest {
                 userId
         )).thenReturn(false);
 
-        when(membershipRepository.save(any(WorkspaceMembership.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(membershipRepository.save(
+                any(WorkspaceMembership.class)
+        )).thenAnswer(invocation ->
+                invocation.getArgument(0)
+        );
 
         WorkspaceMembership result =
                 membershipService.createMembership(
@@ -114,9 +128,18 @@ class WorkspaceMembershipServiceTest {
 
         assertNotNull(result);
         assertNotNull(result.getId());
-        assertEquals(workspaceId, result.getWorkspaceId());
-        assertEquals(userId, result.getUserId());
-        assertEquals(WorkspaceRole.MEMBER, result.getRole());
+        assertEquals(
+                workspaceId,
+                result.getWorkspaceId()
+        );
+        assertEquals(
+                userId,
+                result.getUserId()
+        );
+        assertEquals(
+                WorkspaceRole.MEMBER,
+                result.getRole()
+        );
         assertNotNull(result.getJoinedAt());
 
         verify(membershipRepository)
@@ -139,9 +162,9 @@ class WorkspaceMembershipServiceTest {
                 userId
         )).thenReturn(true);
 
-        IllegalArgumentException exception =
+        ConflictException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ConflictException.class,
                         () -> membershipService.createMembership(
                                 workspaceId,
                                 userId,
@@ -151,6 +174,41 @@ class WorkspaceMembershipServiceTest {
 
         assertEquals(
                 "User is already a member of this workspace",
+                exception.getMessage()
+        );
+
+        verify(membershipRepository)
+                .existsByWorkspaceIdAndUserId(
+                        workspaceId,
+                        userId
+                );
+
+        verify(membershipRepository, never())
+                .save(any(WorkspaceMembership.class));
+    }
+
+    @Test
+    void createMembership_shouldRejectNullRole() {
+        UUID workspaceId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(membershipRepository.existsByWorkspaceIdAndUserId(
+                workspaceId,
+                userId
+        )).thenReturn(false);
+
+        IllegalArgumentException exception =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> membershipService.createMembership(
+                                workspaceId,
+                                userId,
+                                null
+                        )
+                );
+
+        assertEquals(
+                "Workspace role is required",
                 exception.getMessage()
         );
 
@@ -208,9 +266,9 @@ class WorkspaceMembershipServiceTest {
                 userId
         )).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception =
+        ResourceNotFoundException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResourceNotFoundException.class,
                         () -> membershipService.deleteMembership(
                                 workspaceId,
                                 userId
