@@ -25,23 +25,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIllegalArgumentException(
             IllegalArgumentException exception
     ) {
-        String message = exception.getMessage();
-
-        if (isForbiddenMessage(message)) {
-            return ResponseEntity
-                    .status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", message));
-        }
-
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", message));
-    }
-
-    private boolean isForbiddenMessage(String message) {
-        return "Insufficient workspace permissions".equals(message)
-                || "User is not a member of this workspace".equals(message)
-                || "Workspace owner cannot be removed".equals(message)
-                || "Team does not belong to this workspace".equals(message);
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", exception.getMessage()));
     }
 }
