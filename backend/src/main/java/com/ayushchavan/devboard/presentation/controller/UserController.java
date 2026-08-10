@@ -51,10 +51,7 @@ public class UserController {
     ) {
         UUID userId = (UUID) authentication.getPrincipal();
 
-        User user = userService.findById(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("User not found")
-                );
+        User user = userService.findById(userId);
 
         return ResponseEntity.ok(UserResponse.from(user));
     }
@@ -93,7 +90,7 @@ public class UserController {
 
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteCurrentUser(
-        Authentication authentication
+            Authentication authentication
     ) {
         UUID userId = (UUID) authentication.getPrincipal();
 

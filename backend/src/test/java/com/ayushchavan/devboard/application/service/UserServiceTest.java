@@ -40,45 +40,50 @@ class UserServiceTest {
 
     @Test
     void findById_shouldReturnUserWhenUserExists() {
-        UUID userId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
 
-        User user = createUser(
-                userId,
-                "Ayush Chavan",
-                "ayush@example.com"
-        );
+    User user = createUser(
+            userId,
+            "Ayush Chavan",
+            "ayush@example.com"
+    );
 
-        when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
 
-        Optional<User> result =
-                userService.findById(userId);
+    User result = userService.findById(userId);
 
-        assertTrue(result.isPresent());
-        assertEquals(userId, result.get().getId());
-        assertEquals(
-                "Ayush Chavan",
-                result.get().getName()
-        );
+    assertNotNull(result);
+    assertEquals(userId, result.getId());
+    assertEquals(
+            "Ayush Chavan",
+            result.getName()
+    );
 
-        verify(userRepository)
-                .findById(userId);
+    verify(userRepository)
+            .findById(userId);
     }
 
     @Test
-    void findById_shouldReturnEmptyWhenUserDoesNotExist() {
-        UUID userId = UUID.randomUUID();
+    void findById_shouldThrowWhenUserDoesNotExist() {
+    UUID userId = UUID.randomUUID();
 
-        when(userRepository.findById(userId))
-                .thenReturn(Optional.empty());
+    when(userRepository.findById(userId))
+            .thenReturn(Optional.empty());
 
-        Optional<User> result =
-                userService.findById(userId);
+    ResourceNotFoundException exception =
+            assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> userService.findById(userId)
+            );
 
-        assertTrue(result.isEmpty());
+    assertEquals(
+            "User not found",
+            exception.getMessage()
+    );
 
-        verify(userRepository)
-                .findById(userId);
+    verify(userRepository)
+            .findById(userId);
     }
 
     @Test
