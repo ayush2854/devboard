@@ -46,7 +46,11 @@ public class WorkspaceController {
             Authentication authentication,
             @RequestBody CreateWorkspaceRequest request
     ) {
+        UUID authenticatedUserId =
+                (UUID) authentication.getPrincipal();
+
         Workspace workspace = workspaceService.createWorkspace(
+                authenticatedUserId,
                 request.getName(),
                 request.getDescription()
         );
@@ -61,6 +65,14 @@ public class WorkspaceController {
             Authentication authentication,
             @PathVariable UUID workspaceId
     ) {
+        UUID authenticatedUserId =
+                (UUID) authentication.getPrincipal();
+
+        requireWorkspaceMember(
+                workspaceId,
+                authenticatedUserId
+        );
+
         Workspace workspace = workspaceService.findById(workspaceId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
@@ -80,6 +92,17 @@ public class WorkspaceController {
             @PathVariable UUID workspaceId,
             @RequestBody UpdateWorkspaceRequest request
     ) {
+        UUID authenticatedUserId =
+                (UUID) authentication.getPrincipal();
+
+        WorkspaceRole actorRole =
+                getRequiredWorkspaceRole(
+                        workspaceId,
+                        authenticatedUserId
+                );
+
+        requireAdminOrOwner(actorRole);
+
         Workspace workspace = workspaceService.updateWorkspace(
                 workspaceId,
                 request.getName(),
@@ -96,6 +119,17 @@ public class WorkspaceController {
             Authentication authentication,
             @PathVariable UUID workspaceId
     ) {
+        UUID authenticatedUserId =
+                (UUID) authentication.getPrincipal();
+
+        WorkspaceRole actorRole =
+                getRequiredWorkspaceRole(
+                        workspaceId,
+                        authenticatedUserId
+                );
+
+        requireOwner(actorRole);
+
         workspaceService.deleteWorkspace(workspaceId);
 
         return ResponseEntity.noContent().build();
@@ -231,7 +265,10 @@ public class WorkspaceController {
             UUID workspaceId,
             UUID userId
     ) {
-        getRequiredWorkspaceRole(workspaceId, userId);
+        getRequiredWorkspaceRole(
+                workspaceId,
+                userId
+        );
     }
 
     private void requireAdminOrOwner(
@@ -243,6 +280,17 @@ public class WorkspaceController {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Insufficient workspace permissions"
+            );
+        }
+    }
+
+    private void requireOwner(
+            WorkspaceRole role
+    ) {
+        if (role != WorkspaceRole.OWNER) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Only the workspace owner can perform this action"
             );
         }
     }

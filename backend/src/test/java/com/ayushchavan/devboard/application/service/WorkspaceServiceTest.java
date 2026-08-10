@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ayushchavan.devboard.domain.entity.Workspace;
+import com.ayushchavan.devboard.domain.entity.WorkspaceRole;
 import com.ayushchavan.devboard.domain.repository.WorkspaceRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +27,9 @@ class WorkspaceServiceTest {
 
     @Mock
     private WorkspaceRepository workspaceRepository;
+
+    @Mock
+    private WorkspaceMembershipService membershipService;
 
     @InjectMocks
     private WorkspaceService workspaceService;
@@ -75,7 +79,9 @@ class WorkspaceServiceTest {
     }
 
     @Test
-    void createWorkspace_shouldCreateAndSaveWorkspace() {
+    void createWorkspace_shouldCreateWorkspaceAndOwnerMembership() {
+        UUID ownerId = UUID.randomUUID();
+
         String name = "DevBoard";
         String description = "Project management workspace";
 
@@ -83,6 +89,7 @@ class WorkspaceServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         Workspace result = workspaceService.createWorkspace(
+                ownerId,
                 name,
                 description
         );
@@ -94,7 +101,15 @@ class WorkspaceServiceTest {
         assertNotNull(result.getCreatedAt());
         assertNotNull(result.getUpdatedAt());
 
-        verify(workspaceRepository).save(any(Workspace.class));
+        verify(workspaceRepository)
+                .save(any(Workspace.class));
+
+        verify(membershipService)
+                .createMembership(
+                        result.getId(),
+                        ownerId,
+                        WorkspaceRole.OWNER
+                );
     }
 
     @Test

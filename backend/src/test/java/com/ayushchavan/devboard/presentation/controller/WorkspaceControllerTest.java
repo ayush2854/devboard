@@ -17,7 +17,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -50,8 +49,11 @@ class WorkspaceControllerTest {
     private JwtService jwtService;
 
     @Test
-    void createWorkspace_shouldReturnCreatedWorkspace() throws Exception {
+    void createWorkspace_shouldReturnCreatedWorkspace()
+            throws Exception {
+
         UUID workspaceId = UUID.randomUUID();
+        UUID authenticatedUserId = UUID.randomUUID();
         Instant now = Instant.now();
 
         Workspace workspace = new Workspace(
@@ -63,13 +65,18 @@ class WorkspaceControllerTest {
         );
 
         when(workspaceService.createWorkspace(
+                authenticatedUserId,
                 "DevBoard",
                 "Project management workspace"
         )).thenReturn(workspace);
 
         mockMvc.perform(
                 post("/api/workspaces")
-                        .with(user("test-user"))
+                        .with(authentication(
+                                uuidAuthentication(
+                                        authenticatedUserId
+                                )
+                        ))
                         .with(csrf())
                         .contentType("application/json")
                         .content("""
@@ -80,8 +87,14 @@ class WorkspaceControllerTest {
                                 """)
         )
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.id", is(workspaceId.toString())))
-        .andExpect(jsonPath("$.name", is("DevBoard")))
+        .andExpect(jsonPath(
+                "$.id",
+                is(workspaceId.toString())
+        ))
+        .andExpect(jsonPath(
+                "$.name",
+                is("DevBoard")
+        ))
         .andExpect(jsonPath(
                 "$.description",
                 is("Project management workspace")
@@ -89,8 +102,11 @@ class WorkspaceControllerTest {
     }
 
     @Test
-    void getWorkspace_shouldReturnWorkspace() throws Exception {
+    void getWorkspace_shouldReturnWorkspace()
+            throws Exception {
+
         UUID workspaceId = UUID.randomUUID();
+        UUID authenticatedUserId = UUID.randomUUID();
         Instant now = Instant.now();
 
         Workspace workspace = new Workspace(
@@ -101,16 +117,43 @@ class WorkspaceControllerTest {
                 now
         );
 
+        WorkspaceMembership membership =
+                new WorkspaceMembership(
+                        UUID.randomUUID(),
+                        workspaceId,
+                        authenticatedUserId,
+                        WorkspaceRole.MEMBER,
+                        now
+                );
+
+        when(membershipService.findByWorkspaceAndUser(
+                workspaceId,
+                authenticatedUserId
+        )).thenReturn(Optional.of(membership));
+
         when(workspaceService.findById(workspaceId))
                 .thenReturn(Optional.of(workspace));
 
         mockMvc.perform(
-                get("/api/workspaces/{workspaceId}", workspaceId)
-                        .with(user("test-user"))
+                get(
+                        "/api/workspaces/{workspaceId}",
+                        workspaceId
+                )
+                .with(authentication(
+                        uuidAuthentication(
+                                authenticatedUserId
+                        )
+                ))
         )
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id", is(workspaceId.toString())))
-        .andExpect(jsonPath("$.name", is("DevBoard")))
+        .andExpect(jsonPath(
+                "$.id",
+                is(workspaceId.toString())
+        ))
+        .andExpect(jsonPath(
+                "$.name",
+                is("DevBoard")
+        ))
         .andExpect(jsonPath(
                 "$.description",
                 is("Project management workspace")
@@ -118,8 +161,11 @@ class WorkspaceControllerTest {
     }
 
     @Test
-    void updateWorkspace_shouldReturnUpdatedWorkspace() throws Exception {
+    void updateWorkspace_shouldReturnUpdatedWorkspace()
+            throws Exception {
+
         UUID workspaceId = UUID.randomUUID();
+        UUID authenticatedUserId = UUID.randomUUID();
         Instant now = Instant.now();
 
         Workspace workspace = new Workspace(
@@ -130,6 +176,20 @@ class WorkspaceControllerTest {
                 now
         );
 
+        WorkspaceMembership adminMembership =
+                new WorkspaceMembership(
+                        UUID.randomUUID(),
+                        workspaceId,
+                        authenticatedUserId,
+                        WorkspaceRole.ADMIN,
+                        now
+                );
+
+        when(membershipService.findByWorkspaceAndUser(
+                workspaceId,
+                authenticatedUserId
+        )).thenReturn(Optional.of(adminMembership));
+
         when(workspaceService.updateWorkspace(
                 workspaceId,
                 "Updated DevBoard",
@@ -137,16 +197,23 @@ class WorkspaceControllerTest {
         )).thenReturn(workspace);
 
         mockMvc.perform(
-                put("/api/workspaces/{workspaceId}", workspaceId)
-                        .with(user("test-user"))
-                        .with(csrf())
-                        .contentType("application/json")
-                        .content("""
-                                {
-                                    "name": "Updated DevBoard",
-                                    "description": "Updated description"
-                                }
-                                """)
+                put(
+                        "/api/workspaces/{workspaceId}",
+                        workspaceId
+                )
+                .with(authentication(
+                        uuidAuthentication(
+                                authenticatedUserId
+                        )
+                ))
+                .with(csrf())
+                .contentType("application/json")
+                .content("""
+                        {
+                            "name": "Updated DevBoard",
+                            "description": "Updated description"
+                        }
+                        """)
         )
         .andExpect(status().isOk())
         .andExpect(jsonPath(
@@ -160,22 +227,49 @@ class WorkspaceControllerTest {
     }
 
     @Test
-    void deleteWorkspace_shouldReturnNoContent() throws Exception {
+    void deleteWorkspace_shouldReturnNoContent()
+            throws Exception {
+
         UUID workspaceId = UUID.randomUUID();
+        UUID authenticatedUserId = UUID.randomUUID();
+        Instant now = Instant.now();
+
+        WorkspaceMembership ownerMembership =
+                new WorkspaceMembership(
+                        UUID.randomUUID(),
+                        workspaceId,
+                        authenticatedUserId,
+                        WorkspaceRole.OWNER,
+                        now
+                );
+
+        when(membershipService.findByWorkspaceAndUser(
+                workspaceId,
+                authenticatedUserId
+        )).thenReturn(Optional.of(ownerMembership));
 
         doNothing().when(workspaceService)
                 .deleteWorkspace(workspaceId);
 
         mockMvc.perform(
-                delete("/api/workspaces/{workspaceId}", workspaceId)
-                        .with(user("test-user"))
-                        .with(csrf())
+                delete(
+                        "/api/workspaces/{workspaceId}",
+                        workspaceId
+                )
+                .with(authentication(
+                        uuidAuthentication(
+                                authenticatedUserId
+                        )
+                ))
+                .with(csrf())
         )
         .andExpect(status().isNoContent());
     }
 
     @Test
-    void getWorkspaceMember_shouldReturnMember() throws Exception {
+    void getWorkspaceMember_shouldReturnMember()
+            throws Exception {
+
         UUID workspaceId = UUID.randomUUID();
         UUID authenticatedUserId = UUID.randomUUID();
         UUID targetUserId = UUID.randomUUID();
@@ -217,7 +311,9 @@ class WorkspaceControllerTest {
                         targetUserId
                 )
                 .with(authentication(
-                        uuidAuthentication(authenticatedUserId)
+                        uuidAuthentication(
+                                authenticatedUserId
+                        )
                 ))
         )
         .andExpect(status().isOk())

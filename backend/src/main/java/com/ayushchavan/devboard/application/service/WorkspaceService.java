@@ -7,17 +7,21 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ayushchavan.devboard.domain.entity.Workspace;
+import com.ayushchavan.devboard.domain.entity.WorkspaceRole;
 import com.ayushchavan.devboard.domain.repository.WorkspaceRepository;
 
 @Service
 public class WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
+    private final WorkspaceMembershipService membershipService;
 
     public WorkspaceService(
-            WorkspaceRepository workspaceRepository
+            WorkspaceRepository workspaceRepository,
+            WorkspaceMembershipService membershipService
     ) {
         this.workspaceRepository = workspaceRepository;
+        this.membershipService = membershipService;
     }
 
     public Optional<Workspace> findById(UUID id) {
@@ -25,6 +29,7 @@ public class WorkspaceService {
     }
 
     public Workspace createWorkspace(
+            UUID ownerId,
             String name,
             String description
     ) {
@@ -38,7 +43,16 @@ public class WorkspaceService {
                 now
         );
 
-        return workspaceRepository.save(workspace);
+        Workspace savedWorkspace =
+                workspaceRepository.save(workspace);
+
+        membershipService.createMembership(
+                savedWorkspace.getId(),
+                ownerId,
+                WorkspaceRole.OWNER
+        );
+
+        return savedWorkspace;
     }
 
     public Workspace updateWorkspace(
