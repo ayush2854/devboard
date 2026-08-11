@@ -26,8 +26,7 @@ public class TaskService {
     public List<Task> findAllByProjectId(
             UUID projectId
     ) {
-        return taskRepository
-                .findAllByProjectId(projectId);
+        return taskRepository.findAllByProjectId(projectId);
     }
 
     public Task findById(
@@ -82,6 +81,12 @@ public class TaskService {
     ) {
         Task existingTask = findById(taskId);
 
+        if (existingTask.getArchivedAt() != null) {
+            throw new IllegalStateException(
+                    "Archived task cannot be updated"
+            );
+        }
+
         Task updatedTask = new Task(
                 existingTask.getId(),
                 existingTask.getProjectId(),
@@ -98,6 +103,37 @@ public class TaskService {
         );
 
         return taskRepository.save(updatedTask);
+    }
+
+    public Task archiveTask(
+            UUID taskId
+    ) {
+        Task existingTask = findById(taskId);
+
+        if (existingTask.getArchivedAt() != null) {
+            throw new IllegalStateException(
+                    "Task is already archived"
+            );
+        }
+
+        Instant now = Instant.now();
+
+        Task archivedTask = new Task(
+                existingTask.getId(),
+                existingTask.getProjectId(),
+                existingTask.getTitle(),
+                existingTask.getDescription(),
+                existingTask.getStatus(),
+                existingTask.getPriority(),
+                existingTask.getCreatedBy(),
+                existingTask.getAssigneeId(),
+                existingTask.getDueDate(),
+                existingTask.getCreatedAt(),
+                now,
+                now
+        );
+
+        return taskRepository.save(archivedTask);
     }
 
     public void deleteTask(

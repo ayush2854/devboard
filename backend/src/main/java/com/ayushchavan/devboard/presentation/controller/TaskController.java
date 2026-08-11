@@ -20,30 +20,30 @@ import com.ayushchavan.devboard.application.dto.task.CreateTaskRequest;
 import com.ayushchavan.devboard.application.dto.task.TaskResponse;
 import com.ayushchavan.devboard.application.dto.task.UpdateTaskRequest;
 import com.ayushchavan.devboard.application.exception.ForbiddenException;
-import com.ayushchavan.devboard.application.service.ProjectService;
 import com.ayushchavan.devboard.application.service.TaskService;
 import com.ayushchavan.devboard.application.service.WorkspaceMembershipService;
 import com.ayushchavan.devboard.domain.entity.Project;
 import com.ayushchavan.devboard.domain.entity.Task;
 import com.ayushchavan.devboard.domain.entity.WorkspaceMembership;
 import com.ayushchavan.devboard.domain.entity.WorkspaceRole;
+import com.ayushchavan.devboard.domain.repository.ProjectRepository;
 
 @RestController
 @RequestMapping("/api/workspaces/{workspaceId}/projects/{projectId}/tasks")
 public class TaskController {
 
     private final TaskService taskService;
-    private final ProjectService projectService;
     private final WorkspaceMembershipService membershipService;
+    private final ProjectRepository projectRepository;
 
     public TaskController(
             TaskService taskService,
-            ProjectService projectService,
-            WorkspaceMembershipService membershipService
+            WorkspaceMembershipService membershipService,
+            ProjectRepository projectRepository
     ) {
         this.taskService = taskService;
-        this.projectService = projectService;
         this.membershipService = membershipService;
+        this.projectRepository = projectRepository;
     }
 
     @GetMapping
@@ -94,13 +94,13 @@ public class TaskController {
                 workspaceId
         );
 
-        Task task =
-                taskService.findById(taskId);
+        Task task = taskService.findById(taskId);
 
-        requireTaskBelongsToProject(
-                task,
-                projectId
-        );
+        if (!task.getProjectId().equals(projectId)) {
+            throw new ForbiddenException(
+                    "Task does not belong to this project"
+            );
+        }
 
         return ResponseEntity.ok(
                 TaskResponse.from(task)
@@ -130,16 +130,15 @@ public class TaskController {
                 workspaceId
         );
 
-        Task task =
-                taskService.createTask(
-                        projectId,
-                        request.getTitle(),
-                        request.getDescription(),
-                        request.getPriority(),
-                        authenticatedUserId,
-                        request.getAssigneeId(),
-                        request.getDueDate()
-                );
+        Task task = taskService.createTask(
+                projectId,
+                request.getTitle(),
+                request.getDescription(),
+                request.getPriority(),
+                authenticatedUserId,
+                request.getAssigneeId(),
+                request.getDueDate()
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -173,21 +172,21 @@ public class TaskController {
         Task existingTask =
                 taskService.findById(taskId);
 
-        requireTaskBelongsToProject(
-                existingTask,
-                projectId
-        );
+        if (!existingTask.getProjectId().equals(projectId)) {
+            throw new ForbiddenException(
+                    "Task does not belong to this project"
+            );
+        }
 
-        Task task =
-                taskService.updateTask(
-                        taskId,
-                        request.getTitle(),
-                        request.getDescription(),
-                        request.getStatus(),
-                        request.getPriority(),
-                        request.getAssigneeId(),
-                        request.getDueDate()
-                );
+        Task task = taskService.updateTask(
+                taskId,
+                request.getTitle(),
+                request.getDescription(),
+                request.getStatus(),
+                request.getPriority(),
+                request.getAssigneeId(),
+                request.getDueDate()
+        );
 
         return ResponseEntity.ok(
                 TaskResponse.from(task)
@@ -220,10 +219,11 @@ public class TaskController {
         Task existingTask =
                 taskService.findById(taskId);
 
-        requireTaskBelongsToProject(
-                existingTask,
-                projectId
-        );
+        if (!existingTask.getProjectId().equals(projectId)) {
+            throw new ForbiddenException(
+                    "Task does not belong to this project"
+            );
+        }
 
         taskService.deleteTask(taskId);
 
@@ -290,33 +290,21 @@ public class TaskController {
         }
     }
 
-    private Project requireProjectBelongsToWorkspace(
+    private void requireProjectBelongsToWorkspace(
             UUID projectId,
             UUID workspaceId
     ) {
         Project project =
-                projectService.findById(projectId);
+                projectRepository.findById(projectId)
+                        .orElseThrow(() ->
+                                new ForbiddenException(
+                                        "Project not found"
+                                )
+                        );
 
-        if (!project.getWorkspaceId()
-                .equals(workspaceId)) {
-
+        if (!project.getWorkspaceId().equals(workspaceId)) {
             throw new ForbiddenException(
                     "Project does not belong to this workspace"
-            );
-        }
-
-        return project;
-    }
-
-    private void requireTaskBelongsToProject(
-            Task task,
-            UUID projectId
-    ) {
-        if (!task.getProjectId()
-                .equals(projectId)) {
-
-            throw new ForbiddenException(
-                    "Task does not belong to this project"
             );
         }
     }
