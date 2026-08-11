@@ -382,6 +382,162 @@ void updateTask_shouldThrowWhenTaskDoesNotExist() {
 }
 
 @Test
+void archiveTask_shouldArchiveTask() {
+
+    UUID taskId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID createdBy = UUID.randomUUID();
+
+    Instant createdAt = Instant.now();
+
+    Task existingTask = new Task(
+            taskId,
+            projectId,
+            "Implement login",
+            "Implement JWT login",
+            TaskStatus.IN_PROGRESS,
+            TaskPriority.HIGH,
+            createdBy,
+            null,
+            null,
+            createdAt,
+            createdAt,
+            null
+    );
+
+    when(taskRepository.findById(taskId))
+            .thenReturn(Optional.of(existingTask));
+
+    when(taskRepository.save(any(Task.class)))
+            .thenAnswer(invocation ->
+                    invocation.getArgument(0));
+
+    Task result =
+            taskService.archiveTask(taskId);
+
+    assertEquals(
+            taskId,
+            result.getId()
+    );
+
+    assertEquals(
+            projectId,
+            result.getProjectId()
+    );
+
+    assertEquals(
+            "Implement login",
+            result.getTitle()
+    );
+
+    assertEquals(
+            TaskStatus.IN_PROGRESS,
+            result.getStatus()
+    );
+
+    assertEquals(
+            TaskPriority.HIGH,
+            result.getPriority()
+    );
+
+    assertEquals(
+            createdBy,
+            result.getCreatedBy()
+    );
+
+    assertEquals(
+            createdAt,
+            result.getCreatedAt()
+    );
+
+    assertEquals(
+            null,
+            result.getAssigneeId()
+    );
+
+    assertEquals(
+            null,
+            result.getDueDate()
+    );
+
+    // archivedAt must be set
+    org.junit.jupiter.api.Assertions.assertNotNull(
+            result.getArchivedAt()
+    );
+
+    verify(taskRepository)
+            .findById(taskId);
+
+    verify(taskRepository)
+            .save(any(Task.class));
+}
+
+@Test
+void archiveTask_shouldThrowWhenTaskDoesNotExist() {
+
+    UUID taskId = UUID.randomUUID();
+
+    when(taskRepository.findById(taskId))
+            .thenReturn(Optional.empty());
+
+    assertThrows(
+            IllegalArgumentException.class,
+            () -> taskService.archiveTask(taskId)
+    );
+
+    verify(taskRepository)
+            .findById(taskId);
+
+    verify(taskRepository, never())
+            .save(any(Task.class));
+}
+
+@Test
+void archiveTask_shouldThrowWhenTaskIsAlreadyArchived() {
+
+    UUID taskId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID createdBy = UUID.randomUUID();
+
+    Instant now = Instant.now();
+
+    Task archivedTask = new Task(
+            taskId,
+            projectId,
+            "Already archived",
+            "Archived task",
+            TaskStatus.DONE,
+            TaskPriority.MEDIUM,
+            createdBy,
+            null,
+            null,
+            now,
+            now,
+            now
+    );
+
+    when(taskRepository.findById(taskId))
+            .thenReturn(Optional.of(archivedTask));
+
+    IllegalStateException exception =
+            assertThrows(
+                    IllegalStateException.class,
+                    () -> taskService.archiveTask(taskId)
+            );
+
+    assertEquals(
+            "Task is already archived",
+            exception.getMessage()
+    );
+
+    verify(taskRepository)
+            .findById(taskId);
+
+    verify(taskRepository, never())
+            .save(any(Task.class));
+}
+
+@Test
 void deleteTask_shouldDeleteTask() {
 
     UUID taskId = UUID.randomUUID();

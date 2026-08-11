@@ -885,6 +885,228 @@ class ProjectControllerTest {
                 .deleteProject(projectId);
     }
 
+    @Test
+void createProject_shouldRejectBlankName()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    adminId,
+                    WorkspaceRole.ADMIN
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            adminId
+    )).thenReturn(Optional.of(membership));
+
+    mockMvc.perform(
+            post(
+                    "/api/workspaces/{workspaceId}/projects",
+                    workspaceId
+            )
+            .with(user(adminId.toString()))
+            .with(csrf())
+            .contentType("application/json")
+            .content("""
+                    {
+                        "name": "",
+                        "description": "Backend project"
+                    }
+                    """)
+    )
+    .andExpect(status().isBadRequest())
+    .andExpect(jsonPath(
+            "$.status",
+            is(400)
+    ))
+    .andExpect(jsonPath(
+            "$.message",
+            is("Project name is required")
+    ));
+
+    verify(projectService, never())
+            .createProject(
+                    any(UUID.class),
+                    any(String.class),
+                    any(String.class)
+            );
+}
+
+@Test
+void createProject_shouldRejectNameExceedingMaximumLength()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    adminId,
+                    WorkspaceRole.ADMIN
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            adminId
+    )).thenReturn(Optional.of(membership));
+
+    String longName = "A".repeat(101);
+
+    mockMvc.perform(
+            post(
+                    "/api/workspaces/{workspaceId}/projects",
+                    workspaceId
+            )
+            .with(user(adminId.toString()))
+            .with(csrf())
+            .contentType("application/json")
+            .content("""
+                    {
+                        "name": "%s",
+                        "description": "Backend project"
+                    }
+                    """.formatted(longName))
+    )
+    .andExpect(status().isBadRequest())
+    .andExpect(jsonPath(
+            "$.status",
+            is(400)
+    ))
+    .andExpect(jsonPath(
+            "$.message",
+            is("Project name must not exceed 100 characters")
+    ));
+
+    verify(projectService, never())
+            .createProject(
+                    any(UUID.class),
+                    any(String.class),
+                    any(String.class)
+            );
+}
+
+@Test
+void updateProject_shouldRejectBlankName()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    adminId,
+                    WorkspaceRole.ADMIN
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            adminId
+    )).thenReturn(Optional.of(membership));
+
+    mockMvc.perform(
+            put(
+                    "/api/workspaces/{workspaceId}/projects/{projectId}",
+                    workspaceId,
+                    projectId
+            )
+            .with(user(adminId.toString()))
+            .with(csrf())
+            .contentType("application/json")
+            .content("""
+                    {
+                        "name": "",
+                        "description": "Updated project"
+                    }
+                    """)
+    )
+    .andExpect(status().isBadRequest())
+    .andExpect(jsonPath(
+            "$.status",
+            is(400)
+    ))
+    .andExpect(jsonPath(
+            "$.message",
+            is("Project name is required")
+    ));
+
+    verify(projectService, never())
+            .findById(projectId);
+
+    verify(projectService, never())
+            .updateProject(
+                    any(UUID.class),
+                    any(String.class),
+                    any(String.class)
+            );
+}
+
+@Test
+void updateProject_shouldRejectNameExceedingMaximumLength()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    adminId,
+                    WorkspaceRole.ADMIN
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            adminId
+    )).thenReturn(Optional.of(membership));
+
+    String longName = "A".repeat(101);
+
+    mockMvc.perform(
+            put(
+                    "/api/workspaces/{workspaceId}/projects/{projectId}",
+                    workspaceId,
+                    projectId
+            )
+            .with(user(adminId.toString()))
+            .with(csrf())
+            .contentType("application/json")
+            .content("""
+                    {
+                        "name": "%s",
+                        "description": "Updated project"
+                    }
+                    """.formatted(longName))
+    )
+    .andExpect(status().isBadRequest())
+    .andExpect(jsonPath(
+            "$.status",
+            is(400)
+    ))
+    .andExpect(jsonPath(
+            "$.message",
+            is("Project name must not exceed 100 characters")
+    ));
+
+    verify(projectService, never())
+            .findById(projectId);
+
+    verify(projectService, never())
+            .updateProject(
+                    any(UUID.class),
+                    any(String.class),
+                    any(String.class)
+            );
+    }
+
     private Project createProject(
             UUID projectId,
             UUID workspaceId,

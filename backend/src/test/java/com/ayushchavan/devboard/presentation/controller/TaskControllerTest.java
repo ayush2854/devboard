@@ -1,31 +1,31 @@
 package com.ayushchavan.devboard.presentation.controller;
 
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.ayushchavan.devboard.application.service.JwtService;
 import com.ayushchavan.devboard.application.service.TaskService;
@@ -590,8 +590,9 @@ class TaskControllerTest {
                 .contentType("application/json")
                 .content("""
                         {
-                            "title": "Create dashboard",
-                            "description": "Create dashboard UI"
+                        "title": "Create dashboard",
+                        "description": "Create dashboard UI",
+                        "priority": "MEDIUM"
                         }
                         """)
         )
@@ -651,11 +652,12 @@ class TaskControllerTest {
                 .with(csrf())
                 .contentType("application/json")
                 .content("""
-                        {
-                            "title": "Create dashboard",
-                            "description": "Create dashboard UI"
-                        }
-                        """)
+                {
+                    "title": "Create dashboard",
+                    "description": "Create dashboard UI",
+                    "priority": "MEDIUM"
+                }
+                """)
         )
         .andExpect(status().isForbidden());
 
@@ -814,12 +816,13 @@ class TaskControllerTest {
                 .with(csrf())
                 .contentType("application/json")
                 .content("""
-                        {
-                            "title": "Updated title",
-                            "description": "Updated description",
-                            "status": "DONE"
-                        }
-                        """)
+                {
+                    "title": "Updated title",
+                    "description": "Updated description",
+                    "status": "DONE",
+                    "priority": "HIGH"
+                }
+                """)
         )
         .andExpect(status().isForbidden());
 
@@ -918,6 +921,304 @@ class TaskControllerTest {
                 );
     }
 
+    @Test
+    void archiveTask_shouldReturnArchivedTaskForAdmin()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID taskId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+
+    Project project = createProject(
+            projectId,
+            workspaceId
+    );
+
+    Task existingTask = createTask(
+            taskId,
+            projectId,
+            "Implement authentication",
+            "Implement JWT authentication",
+            TaskStatus.TODO,
+            TaskPriority.MEDIUM,
+            adminId,
+            null
+    );
+
+    Task archivedTask = new Task(
+            taskId,
+            projectId,
+            "Implement authentication",
+            "Implement JWT authentication",
+            TaskStatus.TODO,
+            TaskPriority.MEDIUM,
+            adminId,
+            null,
+            null,
+            existingTask.getCreatedAt(),
+            Instant.now(),
+            Instant.now()
+    );
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    adminId,
+                    WorkspaceRole.ADMIN
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            adminId
+    )).thenReturn(Optional.of(membership));
+
+    when(projectRepository.findById(projectId))
+            .thenReturn(Optional.of(project));
+
+    when(taskService.findById(taskId))
+            .thenReturn(existingTask);
+
+    when(taskService.archiveTask(taskId))
+            .thenReturn(archivedTask);
+
+    mockMvc.perform(
+            patch(
+                    "/api/workspaces/{workspaceId}/projects/{projectId}/tasks/{taskId}/archive",
+                    workspaceId,
+                    projectId,
+                    taskId
+            )
+            .with(user(adminId.toString()))
+            .with(csrf())
+    )
+    .andExpect(status().isOk())
+    .andExpect(jsonPath(
+            "$.id",
+            is(taskId.toString())
+    ))
+    .andExpect(jsonPath(
+            "$.projectId",
+            is(projectId.toString())
+    ))
+    .andExpect(jsonPath(
+            "$.title",
+            is("Implement authentication")
+    ))
+    .andExpect(jsonPath(
+            "$.status",
+            is("TODO")
+    ))
+    .andExpect(jsonPath(
+            "$.priority",
+            is("MEDIUM")
+    ))
+    .andExpect(jsonPath(
+            "$.createdBy",
+            is(adminId.toString())
+    ))
+    .andExpect(jsonPath(
+            "$.archivedAt",
+            org.hamcrest.Matchers.notNullValue()
+    ));
+
+    verify(taskService)
+            .archiveTask(taskId);
+    }
+
+@Test
+void archiveTask_shouldReturnArchivedTaskForOwner()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID taskId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+
+    Project project = createProject(
+            projectId,
+            workspaceId
+    );
+
+    Task existingTask = createTask(
+            taskId,
+            projectId,
+            "Create dashboard",
+            "Create dashboard UI",
+            TaskStatus.IN_PROGRESS,
+            TaskPriority.HIGH,
+            ownerId,
+            null
+    );
+
+    Task archivedTask = new Task(
+            taskId,
+            projectId,
+            "Create dashboard",
+            "Create dashboard UI",
+            TaskStatus.IN_PROGRESS,
+            TaskPriority.HIGH,
+            ownerId,
+            null,
+            null,
+            existingTask.getCreatedAt(),
+            Instant.now(),
+            Instant.now()
+    );
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    ownerId,
+                    WorkspaceRole.OWNER
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            ownerId
+    )).thenReturn(Optional.of(membership));
+
+    when(projectRepository.findById(projectId))
+            .thenReturn(Optional.of(project));
+
+    when(taskService.findById(taskId))
+            .thenReturn(existingTask);
+
+    when(taskService.archiveTask(taskId))
+            .thenReturn(archivedTask);
+
+    mockMvc.perform(
+            patch(
+                    "/api/workspaces/{workspaceId}/projects/{projectId}/tasks/{taskId}/archive",
+                    workspaceId,
+                    projectId,
+                    taskId
+            )
+            .with(user(ownerId.toString()))
+            .with(csrf())
+    )
+    .andExpect(status().isOk())
+    .andExpect(jsonPath(
+            "$.id",
+            is(taskId.toString())
+    ))
+    .andExpect(jsonPath(
+            "$.title",
+            is("Create dashboard")
+    ))
+    .andExpect(jsonPath(
+            "$.archivedAt",
+            org.hamcrest.Matchers.notNullValue()
+    ));
+
+    verify(taskService)
+            .archiveTask(taskId);
+}
+
+@Test
+void archiveTask_shouldRejectMember()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID taskId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    memberId,
+                    WorkspaceRole.MEMBER
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            memberId
+    )).thenReturn(Optional.of(membership));
+
+    mockMvc.perform(
+            patch(
+                    "/api/workspaces/{workspaceId}/projects/{projectId}/tasks/{taskId}/archive",
+                    workspaceId,
+                    projectId,
+                    taskId
+            )
+            .with(user(memberId.toString()))
+            .with(csrf())
+    )
+    .andExpect(status().isForbidden());
+
+    verify(projectRepository, never())
+            .findById(projectId);
+
+    verify(taskService, never())
+            .findById(taskId);
+
+    verify(taskService, never())
+            .archiveTask(taskId);
+}
+
+@Test
+void archiveTask_shouldRejectTaskFromAnotherProject()
+        throws Exception {
+
+    UUID workspaceId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    UUID anotherProjectId = UUID.randomUUID();
+    UUID taskId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+
+    Project project = createProject(
+            projectId,
+            workspaceId
+    );
+
+    Task task = createTask(
+            taskId,
+            anotherProjectId,
+            "Other task",
+            "Other project task",
+            TaskStatus.TODO,
+            TaskPriority.MEDIUM,
+            adminId,
+            null
+    );
+
+    WorkspaceMembership membership =
+            createMembership(
+                    workspaceId,
+                    adminId,
+                    WorkspaceRole.ADMIN
+            );
+
+    when(membershipService.findByWorkspaceAndUser(
+            workspaceId,
+            adminId
+    )).thenReturn(Optional.of(membership));
+
+    when(projectRepository.findById(projectId))
+            .thenReturn(Optional.of(project));
+
+    when(taskService.findById(taskId))
+            .thenReturn(task);
+
+    mockMvc.perform(
+            patch(
+                    "/api/workspaces/{workspaceId}/projects/{projectId}/tasks/{taskId}/archive",
+                    workspaceId,
+                    projectId,
+                    taskId
+            )
+            .with(user(adminId.toString()))
+            .with(csrf())
+    )
+    .andExpect(status().isForbidden());
+
+    verify(taskService, never())
+            .archiveTask(taskId);
+}
+
+    
     @Test
     void deleteTask_shouldReturnNoContentForAdmin()
             throws Exception {

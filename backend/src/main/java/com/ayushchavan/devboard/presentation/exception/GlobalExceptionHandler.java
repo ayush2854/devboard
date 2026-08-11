@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import java.util.stream.Collectors;
 
 import com.ayushchavan.devboard.application.exception.BadRequestException;
 import com.ayushchavan.devboard.application.exception.ConflictException;
@@ -54,6 +56,22 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT,
                 exception.getMessage()
         );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationException(
+        MethodArgumentNotValidException exception
+    ) {
+    String message = exception.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .map(error -> error.getDefaultMessage())
+            .collect(Collectors.joining(", "));
+
+    return buildResponse(
+            HttpStatus.BAD_REQUEST,
+            message
+    );
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(

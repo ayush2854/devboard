@@ -3,6 +3,7 @@ package com.ayushchavan.devboard.presentation.controller;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 import com.ayushchavan.devboard.application.dto.task.CreateTaskRequest;
 import com.ayushchavan.devboard.application.dto.task.TaskResponse;
@@ -112,7 +114,7 @@ public class TaskController {
             Authentication authentication,
             @PathVariable UUID workspaceId,
             @PathVariable UUID projectId,
-            @RequestBody CreateTaskRequest request
+            @Valid @RequestBody CreateTaskRequest request
     ) {
         UUID authenticatedUserId =
                 getAuthenticatedUserId(authentication);
@@ -151,7 +153,7 @@ public class TaskController {
             @PathVariable UUID workspaceId,
             @PathVariable UUID projectId,
             @PathVariable UUID taskId,
-            @RequestBody UpdateTaskRequest request
+            @Valid @RequestBody UpdateTaskRequest request
     ) {
         UUID authenticatedUserId =
                 getAuthenticatedUserId(authentication);
@@ -192,6 +194,46 @@ public class TaskController {
                 TaskResponse.from(task)
         );
     }
+
+@PatchMapping("/{taskId}/archive")
+public ResponseEntity<TaskResponse> archiveTask(
+        Authentication authentication,
+        @PathVariable UUID workspaceId,
+        @PathVariable UUID projectId,
+        @PathVariable UUID taskId
+) {
+    UUID authenticatedUserId =
+            getAuthenticatedUserId(authentication);
+
+    WorkspaceRole actorRole =
+            getRequiredWorkspaceRole(
+                    workspaceId,
+                    authenticatedUserId
+            );
+
+    requireAdminOrOwner(actorRole);
+
+    requireProjectBelongsToWorkspace(
+            projectId,
+            workspaceId
+    );
+
+    Task existingTask =
+            taskService.findById(taskId);
+
+    if (!existingTask.getProjectId().equals(projectId)) {
+        throw new ForbiddenException(
+                "Task does not belong to this project"
+        );
+    }
+
+    Task task =
+            taskService.archiveTask(taskId);
+
+    return ResponseEntity.ok(
+            TaskResponse.from(task)
+    );
+}
 
     @DeleteMapping("/{taskId}")
     public ResponseEntity<Void> deleteTask(
