@@ -24,9 +24,10 @@ public class TaskService {
     }
 
     public List<Task> findAllByProjectId(
-            UUID projectId
+        UUID projectId
     ) {
-        return taskRepository.findAllByProjectId(projectId);
+    return taskRepository
+            .findAllByProjectIdAndArchivedAtIsNull(projectId);
     }
 
     public Task findById(
