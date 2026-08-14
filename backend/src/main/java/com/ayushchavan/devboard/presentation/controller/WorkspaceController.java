@@ -46,11 +46,10 @@ public class WorkspaceController {
             Authentication authentication,
             @RequestBody CreateWorkspaceRequest request
     ) {
-        UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+        UUID userId = getAuthenticatedUserId(authentication);
 
         Workspace workspace = workspaceService.createWorkspace(
-                authenticatedUserId,
+                userId,
                 request.getName(),
                 request.getDescription()
         );
@@ -65,13 +64,9 @@ public class WorkspaceController {
             Authentication authentication,
             @PathVariable UUID workspaceId
     ) {
-        UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+        UUID userId = getAuthenticatedUserId(authentication);
 
-        requireWorkspaceMember(
-                workspaceId,
-                authenticatedUserId
-        );
+        requireWorkspaceMember(workspaceId, userId);
 
         Workspace workspace = workspaceService.findById(workspaceId)
                 .orElseThrow(() ->
@@ -92,14 +87,10 @@ public class WorkspaceController {
             @PathVariable UUID workspaceId,
             @RequestBody UpdateWorkspaceRequest request
     ) {
-        UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+        UUID userId = getAuthenticatedUserId(authentication);
 
         WorkspaceRole actorRole =
-                getRequiredWorkspaceRole(
-                        workspaceId,
-                        authenticatedUserId
-                );
+                getRequiredWorkspaceRole(workspaceId, userId);
 
         requireAdminOrOwner(actorRole);
 
@@ -119,14 +110,10 @@ public class WorkspaceController {
             Authentication authentication,
             @PathVariable UUID workspaceId
     ) {
-        UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+        UUID userId = getAuthenticatedUserId(authentication);
 
         WorkspaceRole actorRole =
-                getRequiredWorkspaceRole(
-                        workspaceId,
-                        authenticatedUserId
-                );
+                getRequiredWorkspaceRole(workspaceId, userId);
 
         requireOwner(actorRole);
 
@@ -142,7 +129,7 @@ public class WorkspaceController {
             @PathVariable UUID userId
     ) {
         UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+                getAuthenticatedUserId(authentication);
 
         requireWorkspaceMember(
                 workspaceId,
@@ -150,17 +137,15 @@ public class WorkspaceController {
         );
 
         WorkspaceMembership membership =
-                membershipService
-                        .findByWorkspaceAndUser(
-                                workspaceId,
-                                userId
+                membershipService.findByWorkspaceAndUser(
+                        workspaceId,
+                        userId
+                ).orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Workspace membership not found"
                         )
-                        .orElseThrow(() ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Workspace membership not found"
-                                )
-                        );
+                );
 
         return ResponseEntity.ok(
                 WorkspaceMemberResponse.from(membership)
@@ -173,14 +158,10 @@ public class WorkspaceController {
             @PathVariable UUID workspaceId,
             @RequestBody AddWorkspaceMemberRequest request
     ) {
-        UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+        UUID userId = getAuthenticatedUserId(authentication);
 
         WorkspaceRole actorRole =
-                getRequiredWorkspaceRole(
-                        workspaceId,
-                        authenticatedUserId
-                );
+                getRequiredWorkspaceRole(workspaceId, userId);
 
         requireAdminOrOwner(actorRole);
 
@@ -193,9 +174,7 @@ public class WorkspaceController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(
-                        WorkspaceMemberResponse.from(membership)
-                );
+                .body(WorkspaceMemberResponse.from(membership));
     }
 
     @DeleteMapping("/{workspaceId}/members/{userId}")
@@ -205,7 +184,7 @@ public class WorkspaceController {
             @PathVariable UUID userId
     ) {
         UUID authenticatedUserId =
-                (UUID) authentication.getPrincipal();
+                getAuthenticatedUserId(authentication);
 
         WorkspaceRole actorRole =
                 getRequiredWorkspaceRole(
@@ -216,17 +195,15 @@ public class WorkspaceController {
         requireAdminOrOwner(actorRole);
 
         WorkspaceMembership target =
-                membershipService
-                        .findByWorkspaceAndUser(
-                                workspaceId,
-                                userId
+                membershipService.findByWorkspaceAndUser(
+                        workspaceId,
+                        userId
+                ).orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Workspace membership not found"
                         )
-                        .orElseThrow(() ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Workspace membership not found"
-                                )
-                        );
+                );
 
         if (target.getRole() == WorkspaceRole.OWNER) {
             throw new ResponseStatusException(
@@ -241,6 +218,12 @@ public class WorkspaceController {
         );
 
         return ResponseEntity.noContent().build();
+    }
+
+    private UUID getAuthenticatedUserId(
+            Authentication authentication
+    ) {
+        return (UUID) authentication.getPrincipal();
     }
 
     private WorkspaceRole getRequiredWorkspaceRole(
@@ -265,10 +248,7 @@ public class WorkspaceController {
             UUID workspaceId,
             UUID userId
     ) {
-        getRequiredWorkspaceRole(
-                workspaceId,
-                userId
-        );
+        getRequiredWorkspaceRole(workspaceId, userId);
     }
 
     private void requireAdminOrOwner(

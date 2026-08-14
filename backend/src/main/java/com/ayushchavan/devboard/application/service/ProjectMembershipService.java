@@ -14,26 +14,25 @@ import com.ayushchavan.devboard.domain.repository.ProjectMembershipRepository;
 @Service
 public class ProjectMembershipService {
 
-    private final ProjectMembershipRepository projectMembershipRepository;
+    private final ProjectMembershipRepository membershipRepository;
 
     public ProjectMembershipService(
-            ProjectMembershipRepository projectMembershipRepository
+            ProjectMembershipRepository membershipRepository
     ) {
-        this.projectMembershipRepository = projectMembershipRepository;
+        this.membershipRepository = membershipRepository;
     }
 
     public List<ProjectMembership> findAllByProjectId(
             UUID projectId
     ) {
-        return projectMembershipRepository
-                .findAllByProjectId(projectId);
+        return membershipRepository.findAllByProjectId(projectId);
     }
 
     public ProjectMembership findByProjectAndUser(
             UUID projectId,
             UUID userId
     ) {
-        return projectMembershipRepository
+        return membershipRepository
                 .findByProjectIdAndUserId(
                         projectId,
                         userId
@@ -62,7 +61,7 @@ public class ProjectMembershipService {
                         Instant.now()
                 );
 
-        return projectMembershipRepository.save(
+        return membershipRepository.save(
                 membership
         );
     }
@@ -77,7 +76,7 @@ public class ProjectMembershipService {
                         userId
                 );
 
-        projectMembershipRepository.delete(
+        membershipRepository.delete(
                 membership
         );
     }
@@ -86,12 +85,10 @@ public class ProjectMembershipService {
             UUID projectId,
             UUID userId
     ) {
-        if (projectMembershipRepository
-                .existsByProjectIdAndUserId(
-                        projectId,
-                        userId
-                )) {
-
+        if (membershipRepository.existsByProjectIdAndUserId(
+                projectId,
+                userId
+        )) {
             throw new ConflictException(
                     "User is already a member of this project"
             );

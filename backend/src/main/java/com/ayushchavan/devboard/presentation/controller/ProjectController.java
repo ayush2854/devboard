@@ -3,7 +3,6 @@ package com.ayushchavan.devboard.presentation.controller;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,6 +25,8 @@ import com.ayushchavan.devboard.application.service.WorkspaceMembershipService;
 import com.ayushchavan.devboard.domain.entity.Project;
 import com.ayushchavan.devboard.domain.entity.WorkspaceMembership;
 import com.ayushchavan.devboard.domain.entity.WorkspaceRole;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/workspaces/{workspaceId}/projects")

@@ -1,6 +1,7 @@
 package com.ayushchavan.devboard.config;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -45,7 +46,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authorizationHeader.substring(7);
 
         if (jwtService.isTokenValid(token)
-                && SecurityContextHolder.getContext()
+                && SecurityContextHolder
+                        .getContext()
                         .getAuthentication() == null) {
 
             UUID userId = jwtService.extractUserId(token);
@@ -54,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(
                             userId,
                             null,
-                            java.util.Collections.emptyList()
+                            Collections.emptyList()
                     );
 
             authentication.setDetails(
