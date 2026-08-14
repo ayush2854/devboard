@@ -10,15 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ayushchavan.devboard.domain.entity.Task;
@@ -62,8 +59,8 @@ void findAllByProjectId_shouldReturnTasks() {
             UUID.randomUUID()
     );
 
-    when(taskRepository.findAllByProjectId(projectId))
-            .thenReturn(List.of(task1, task2));
+        when(taskRepository.findAllByProjectIdAndArchivedAtIsNull(projectId))
+        .thenReturn(List.of(task1, task2));
 
     List<Task> result =
             taskService.findAllByProjectId(projectId);
@@ -72,8 +69,8 @@ void findAllByProjectId_shouldReturnTasks() {
     assertEquals(task1, result.get(0));
     assertEquals(task2, result.get(1));
 
-    verify(taskRepository)
-            .findAllByProjectId(projectId);
+        verify(taskRepository)
+        .findAllByProjectIdAndArchivedAtIsNull(projectId);
 }
 
 @Test

@@ -9,6 +9,7 @@ import com.ayushchavan.devboard.domain.entity.Task;
 
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
-    List<Task> findAllByProjectIdAndArchivedAtIsNull(UUID projectId);
+    List<Task> findAllByProjectId(UUID projectId);
 
+    List<Task> findAllByProjectIdAndArchivedAtIsNull(UUID projectId);
 }
