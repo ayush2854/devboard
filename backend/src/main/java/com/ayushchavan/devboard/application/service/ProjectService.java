@@ -74,7 +74,7 @@ public class ProjectService {
         Project project = findById(projectId);
 
         if (project.getStatus() == ProjectStatus.ARCHIVED) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "Archived project cannot be updated"
             );
         }
@@ -99,7 +99,7 @@ public class ProjectService {
         Project project = findById(projectId);
 
         if (project.getStatus() == ProjectStatus.ARCHIVED) {
-            throw new IllegalArgumentException(
+            throw new ConflictException(
                     "Project is already archived"
             );
         }
